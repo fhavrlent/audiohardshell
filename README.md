@@ -231,7 +231,3 @@ If books aren't syncing correctly:
 2. Verify your API credentials are correct
 3. Ensure your Audiobookshelf books have proper metadata (ISBN, ASIN, or accurate title/author)
 4. Make sure the books exist in your Hardcover.app library
-
-## License
-
-ISC
