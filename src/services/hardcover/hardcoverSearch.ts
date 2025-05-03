@@ -1,9 +1,7 @@
-import { createHardcoverClient } from './hardcoverClient';
 import logger from '../logger';
-import { HardcoverBook } from '../../types';
+import { HardcoverBook, HardcoverClient } from '../../types';
 import { Maybe, SearchOutput } from '../../generated/graphql';
 
-type HardcoverClient = ReturnType<typeof createHardcoverClient>;
 type SearchHit = { document: HardcoverBook };
 
 export async function searchHardcoverBooks(

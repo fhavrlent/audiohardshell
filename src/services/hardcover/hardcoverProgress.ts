@@ -1,9 +1,7 @@
-import { createHardcoverClient } from './hardcoverClient';
 import { validateHardcoverConnection } from './hardcoverConnection';
 import logger from '../logger';
 import { User_Book_Reads } from '../../generated/graphql';
-
-type HardcoverClient = ReturnType<typeof createHardcoverClient>;
+import { HardcoverClient } from '../../types';
 
 interface UpdateProgressInput {
   id: number;

@@ -1,8 +1,6 @@
-import { createHardcoverClient } from './hardcoverClient';
 import logger from '../logger';
 import { Users } from '../../generated/graphql';
-
-type HardcoverClient = ReturnType<typeof createHardcoverClient>;
+import { HardcoverClient } from '../../types';
 
 export async function validateHardcoverConnection(client: HardcoverClient): Promise<boolean> {
   try {

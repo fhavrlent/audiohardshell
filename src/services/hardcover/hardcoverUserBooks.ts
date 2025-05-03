@@ -1,9 +1,7 @@
-import { createHardcoverClient } from './hardcoverClient';
 import logger from '../logger';
 import { HardcoverAudiobook } from '../../hardcoverTypes';
 import { User_Books, Users } from '../../generated/graphql';
-
-type HardcoverClient = ReturnType<typeof createHardcoverClient>;
+import { HardcoverClient } from '../../types';
 
 async function getUserId(client: HardcoverClient): Promise<string> {
   try {

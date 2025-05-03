@@ -1,5 +1,6 @@
 import { HardcoverAudiobook } from './hardcoverTypes';
 import { createAudiobookshelfClient } from './services/audiobookshelf/audiobookshelfClient';
+import { createHardcoverClient } from './services/hardcover/hardcoverClient';
 
 export interface AppConfig {
   audiobookshelf: {
@@ -71,3 +72,5 @@ export interface SyncCache {
 }
 
 export type AudiobookshelfClient = ReturnType<typeof createAudiobookshelfClient>;
+
+export type HardcoverClient = ReturnType<typeof createHardcoverClient>;
