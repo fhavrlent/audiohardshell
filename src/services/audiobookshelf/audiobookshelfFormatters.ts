@@ -1,0 +1,154 @@
+import logger from '../logger';
+import { getAudiobookDetails } from './audiobookshelfBooks';
+import { AudiobookshelfClient, FormattedBook } from '../../types';
+import {
+  BookMetadataExpanded,
+  MediaProgress,
+  PodcastMetadataExpanded,
+} from '../../audiobookshelfTypes';
+
+export async function formatAudiobookForHardcover(
+  client: AudiobookshelfClient,
+  mediaProgress: MediaProgress
+): Promise<FormattedBook> {
+  try {
+    const bookDetails = await getAudiobookDetails(client, mediaProgress.libraryItemId);
+    if (!bookDetails) {
+      throw new Error(`Book details not found for ID: ${mediaProgress.libraryItemId}`);
+    }
+
+    if (!bookDetails.media) {
+      logger.warn(
+        `Book with ID ${mediaProgress.libraryItemId} has no media property, using fallback data structure`
+      );
+
+      return createAudiobookFormatFallback(bookDetails, mediaProgress);
+    }
+
+    const metadata = bookDetails.media.metadata || {};
+    const authors = extractAudiobookAuthors(metadata);
+    const progressPercent = calculateAudiobookProgressPercent(mediaProgress);
+
+    return {
+      book: {
+        title: metadata.title || bookDetails.media.metadata.title || 'Unknown Title',
+        isbn: ('isbn' in bookDetails.media.metadata && bookDetails.media.metadata.isbn) || null,
+        authors: authors,
+        asin: ('asin' in bookDetails.media.metadata && bookDetails.media.metadata.asin) || null,
+      },
+      progress: {
+        percent: progressPercent || 0,
+        currentTimeSeconds: mediaProgress.currentTime || 0,
+        durationSeconds:
+          mediaProgress.duration ||
+          ('duration' in bookDetails.media && bookDetails.media.duration) ||
+          0,
+        lastUpdate: mediaProgress.lastUpdate.toString() || new Date().toISOString(),
+        isFinished: mediaProgress.isFinished || false,
+      },
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.error(`Error formatting audiobook for Hardcover`, {
+      error: errorMessage,
+      bookId: mediaProgress.libraryItemId,
+    });
+
+    return {
+      book: {
+        title: `Unknown Book (ID: ${mediaProgress.libraryItemId})`,
+        isbn: null,
+        asin: null,
+        authors: ['Unknown Author'],
+      },
+      progress: {
+        percent: mediaProgress.progress || 0,
+        currentTimeSeconds: mediaProgress.currentTime || 0,
+        durationSeconds: mediaProgress.duration || 0,
+        lastUpdate: mediaProgress.lastUpdate.toString() || new Date().toISOString(),
+        isFinished: mediaProgress.isFinished || false,
+      },
+    };
+  }
+}
+
+function extractAudiobookAuthors(
+  metadata: BookMetadataExpanded | PodcastMetadataExpanded
+): string[] {
+  // Check if it's BookMetadataExpanded which has authors property
+  if ('authors' in metadata && metadata.authors && Array.isArray(metadata.authors)) {
+    return metadata.authors
+      .filter(author => author && typeof author.name === 'string')
+      .map(author => author.name);
+  }
+
+  // Check for authorName which exists in BookMetadataExpanded
+  if ('authorName' in metadata && metadata.authorName) {
+    return [metadata.authorName];
+  }
+
+  // Check for author which exists in PodcastMetadataExpanded
+  if ('author' in metadata && metadata.author) {
+    if (typeof metadata.author === 'string') {
+      return [metadata.author];
+    }
+
+    // Need to explicitly check if it's an array to satisfy TypeScript
+    if (Array.isArray(metadata.author)) {
+      // Cast to string[] to allow filtering
+      const authorArray = metadata.author as string[];
+      return authorArray.filter(a => typeof a === 'string');
+    }
+  }
+
+  return ['Unknown Author'];
+}
+
+function calculateAudiobookProgressPercent(mediaProgress: MediaProgress): number {
+  if (mediaProgress.progress) {
+    return mediaProgress.progress;
+  }
+
+  if (mediaProgress.duration && mediaProgress.currentTime) {
+    return Math.round((mediaProgress.currentTime / mediaProgress.duration) * 100);
+  }
+
+  return 0;
+}
+
+function createAudiobookFormatFallback(
+  bookDetails: unknown,
+  mediaProgress: MediaProgress
+): FormattedBook {
+  const details = bookDetails as Record<string, unknown>;
+
+  const fallbackTitle =
+    (typeof details.title === 'string' ? details.title : null) ||
+    (typeof details.name === 'string' ? details.name : null) ||
+    'Unknown Title';
+
+  const fallbackAuthor =
+    (typeof details.author === 'string' ? details.author : null) ||
+    (typeof details.authorName === 'string' ? details.authorName : null) ||
+    'Unknown Author';
+
+  const fallbackDuration = mediaProgress.duration || 0;
+
+  const authors = Array.isArray(fallbackAuthor) ? [...fallbackAuthor] : [fallbackAuthor];
+
+  return {
+    book: {
+      title: fallbackTitle,
+      isbn: typeof details.isbn === 'string' ? details.isbn : null,
+      asin: typeof details.asin === 'string' ? details.asin : null,
+      authors: authors,
+    },
+    progress: {
+      percent: mediaProgress.progress || 0,
+      currentTimeSeconds: mediaProgress.currentTime || 0,
+      durationSeconds: fallbackDuration,
+      lastUpdate: mediaProgress.lastUpdate.toString() || new Date().toISOString(),
+      isFinished: mediaProgress.isFinished || false,
+    },
+  };
+}

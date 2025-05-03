@@ -1,0 +1,26 @@
+# Node modules and dependencies
+node_modules
+npm-debug.log
+
+# Build artifacts
+dist
+
+# Git and version control
+.git
+.gitignore
+
+# Logs
+logs
+*.log
+
+# Editor configurations
+.vscode
+.idea
+
+# Docker related
+Dockerfile
+.dockerignore
+
+# Other unnecessary files
+README.md
+*.md
