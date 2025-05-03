@@ -8,9 +8,6 @@ A TypeScript application that automatically syncs your audiobook listening progr
 - Matches books between platforms using ISBN, ASIN, or title search
 - Updates progress percentages and timestamps
 - Runs on a configurable schedule (default: every hour)
-- Comprehensive logging and error handling
-- Written in TypeScript for type safety and better code quality
-- Supports Docker secrets for secure API key storage
 
 ## Prerequisites
 
