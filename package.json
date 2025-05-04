@@ -1,5 +1,5 @@
 {
-  "name": "audiohardshell",
+  "name": "audiohardshelf",
   "version": "0.1.0",
   "description": "A tool to sync audiobook listening progress from Audiobookshelf to Hardcover.app",
   "main": "dist/index.js",
@@ -16,7 +16,7 @@
     "lint-format": "npm run lint:fix && npm run format"
   },
   "bin": {
-    "audiohardshell": "./dist/cli.js"
+    "audiohardshelf": "./dist/cli.js"
   },
   "keywords": [
     "audiobookshelf",

@@ -134,7 +134,7 @@ function scheduleSearch(): void {
 if (require.main === module) {
   (async () => {
     try {
-      logger.info('AudioHardShell is starting up');
+      logger.info('AudioHardShelf is starting up');
 
       try {
         validateConfiguration();
@@ -150,7 +150,7 @@ if (require.main === module) {
         logger.info('Running initial sync on startup');
         await runBookSearch();
 
-        logger.info('AudioHardShell is running. Press Ctrl+C to exit');
+        logger.info('AudioHardShelf is running. Press Ctrl+C to exit');
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         logger.error('Error during startup', { error: errorMessage });
@@ -158,7 +158,7 @@ if (require.main === module) {
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      logger.error('Error starting AudioHardShell', { error: errorMessage });
+      logger.error('Error starting AudioHardShelf', { error: errorMessage });
       process.exit(1);
     }
   })();

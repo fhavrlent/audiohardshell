@@ -19,7 +19,7 @@ const logger = winston.createLogger({
     format.splat(),
     format.json()
   ),
-  defaultMeta: { service: 'audiohardshell' },
+  defaultMeta: { service: 'audiohardshelf' },
   transports: [
     new transports.Console({
       format: format.combine(

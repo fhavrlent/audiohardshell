@@ -1,4 +1,4 @@
-# AudioHardShell
+# AudioHardShelf
 
 A TypeScript application that automatically syncs your audiobook listening progress from Audiobookshelf to Hardcover.app.
 
@@ -21,8 +21,8 @@ A TypeScript application that automatically syncs your audiobook listening progr
 
 1. Clone this repository to your VPS or local machine:
    ```bash
-   git clone <repository-url> audiohardshell
-   cd audiohardshell
+   git clone <repository-url> audiohardshelf
+   cd audiohardshelf
    ```
 
 2. Install dependencies:
@@ -63,8 +63,8 @@ A TypeScript application that automatically syncs your audiobook listening progr
 
 1. Clone this repository:
    ```bash
-   git clone <repository-url> audiohardshell
-   cd audiohardshell
+   git clone <repository-url> audiohardshelf
+   cd audiohardshelf
    ```
 
 2. Set up Docker secrets using the provided script:
@@ -119,7 +119,7 @@ For persistent running on a VPS, you can use a process manager like PM2:
 
 2. Start your application with PM2:
    ```bash
-   pm2 start dist/index.js --name audiohardshell
+   pm2 start dist/index.js --name audiohardshelf
    ```
 
 3. Make it restart automatically on server reboot:
@@ -132,19 +132,19 @@ For persistent running on a VPS, you can use a process manager like PM2:
 
 You can also use the provided systemd service file:
 
-1. Edit the `audiohardshell.service` file with your specific user and paths
+1. Edit the `audiohardshelf.service` file with your specific user and paths
 2. Copy the service file to the systemd directory:
    ```bash
-   sudo cp audiohardshell.service /etc/systemd/system/
+   sudo cp audiohardshelf.service /etc/systemd/system/
    ```
 3. Enable and start the service:
    ```bash
-   sudo systemctl enable audiohardshell
-   sudo systemctl start audiohardshell
+   sudo systemctl enable audiohardshelf
+   sudo systemctl start audiohardshelf
    ```
 4. Check the status:
    ```bash
-   sudo systemctl status audiohardshell
+   sudo systemctl status audiohardshelf
    ```
 
 ### Running with Docker Compose and Secrets

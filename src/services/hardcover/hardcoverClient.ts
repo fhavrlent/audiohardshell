@@ -33,7 +33,7 @@ export function createHardcoverClient() {
       headers: {
         Authorization: formattedApiKey,
         'Content-Type': 'application/json',
-        'User-Agent': 'AudioHardShell/0.1 - Audiobook Sync Tool',
+        'User-Agent': 'AudioHardShelf/0.1 - Audiobook Sync Tool',
       },
       timeout: 10000,
     });

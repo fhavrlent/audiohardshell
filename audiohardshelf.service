@@ -1,17 +1,17 @@
 [Unit]
-Description=AudioHardShell sync service
+Description=AudioHardShelf sync service
 After=network.target
 
 [Service]
 Type=simple
 User=yourusername
-WorkingDirectory=/path/to/audiohardshell
+WorkingDirectory=/path/to/audiohardshelf
 ExecStart=/usr/bin/node dist/index.js
 Restart=on-failure
 RestartSec=10
 StandardOutput=syslog
 StandardError=syslog
-SyslogIdentifier=audiohardshell
+SyslogIdentifier=audiohardshelf
 Environment=NODE_ENV=production
 
 [Install]

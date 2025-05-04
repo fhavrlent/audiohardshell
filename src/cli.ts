@@ -17,7 +17,7 @@ async function main(): Promise<void> {
     default:
       // eslint-disable-next-line no-console
       console.log(`
-AudioHardShell CLI
+AudioHardShelf CLI
 
 Available commands:
   sync                      - Synchronize Audiobookshelf listening progress with Hardcover

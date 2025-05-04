@@ -1,9 +1,9 @@
 services:
-  audiohardshell:
+  audiohardshelf:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: audiohardshell
+    container_name: audiohardshelf
     restart: unless-stopped
 
     volumes:
