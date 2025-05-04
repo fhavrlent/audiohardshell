@@ -67,6 +67,7 @@ export async function getCurrentlyReadingBooks(
               asin
               book_id
               audio_seconds
+              title
             }
             user_books(where: { user: {id: {_eq: ${userIdToUse}}}}) {
               id
@@ -126,7 +127,7 @@ export async function getCurrentlyReadingAudiobooks(
 
         return {
           edition_id: book.edition_id,
-          title: book.book.title,
+          title: matchingEdition.title || book.book.title,
           isbn_10: matchingEdition.isbn_10,
           isbn_13: matchingEdition.isbn_13,
           asin: matchingEdition.asin,
