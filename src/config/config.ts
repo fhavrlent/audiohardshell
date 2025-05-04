@@ -27,7 +27,7 @@ const config: AppConfig = {
     apiUrl: 'https://api.hardcover.app/v1/graphql',
     apiKey: readDockerSecret('hardcover_api_key') || process.env.HARDCOVER_API_KEY || '',
   },
-  syncInterval: process.env.SYNC_INTERVAL || '0 */1 * * *', // Default: every hour
+  syncInterval: process.env.SYNC_INTERVAL || '0 */1 * * *',
   logDir: path.join(__dirname, '../../logs'),
 };
 

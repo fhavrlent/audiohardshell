@@ -75,24 +75,53 @@ function scheduleSearch(): void {
   try {
     validateConfiguration();
 
-    logger.info(`Scheduling automatic sync with cron pattern: ${config.syncInterval}`);
+    const syncInterval = config.syncInterval;
 
-    cron.schedule(config.syncInterval, async () => {
-      logger.info('Scheduled sync job starting');
-      try {
-        if (!syncService) {
-          syncService = createSyncService();
+    const intervalMinutes = parseInt(syncInterval);
+
+    if (!isNaN(intervalMinutes) && intervalMinutes > 0) {
+      //
+      logger.info(`Scheduling automatic sync every ${intervalMinutes} minutes from startup`);
+
+      setInterval(
+        async () => {
+          logger.info('Interval-based sync job starting');
+          try {
+            if (!syncService) {
+              syncService = createSyncService();
+            }
+
+            await syncService.findBooksInHardcover();
+            logger.info('Interval-based sync job completed successfully');
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            logger.error('Error during interval-based sync job', {
+              error: errorMessage,
+            });
+          }
+        },
+        intervalMinutes * 60 * 1000
+      );
+    } else {
+      logger.info(`Scheduling automatic sync with cron pattern: ${syncInterval}`);
+
+      cron.schedule(syncInterval, async () => {
+        logger.info('Scheduled sync job starting');
+        try {
+          if (!syncService) {
+            syncService = createSyncService();
+          }
+
+          await syncService.findBooksInHardcover();
+          logger.info('Scheduled sync job completed successfully');
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          logger.error('Error during scheduled sync job', {
+            error: errorMessage,
+          });
         }
-
-        await syncService.findBooksInHardcover();
-        logger.info('Scheduled sync job completed successfully');
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        logger.error('Error during scheduled sync job', {
-          error: errorMessage,
-        });
-      }
-    });
+      });
+    }
 
     logger.info('Automatic sync scheduled successfully');
   } catch (error) {

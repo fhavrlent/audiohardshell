@@ -48,7 +48,10 @@ A TypeScript application that automatically syncs your audiobook listening progr
    # Note: You can include "Bearer " prefix in your API key or leave it out - the app will handle either format
 
    # Sync configuration
-   SYNC_INTERVAL="0 */1 * * *"  # Every hour by default
+   # Option 1: Cron pattern - syncs at specific clock times
+   SYNC_INTERVAL="0 */1 * * *"  # Every hour, at minute 0
+   # Option 2: Minutes interval - syncs every X minutes from service startup
+   # SYNC_INTERVAL="60"  # Every 60 minutes after startup
    ```
 
 5. Build the application:
@@ -173,7 +176,9 @@ podman-compose up -d
 You can adjust the following settings:
 
 When using standard installation (`.env` file):
-- `SYNC_INTERVAL`: A cron pattern for scheduling sync (default: `0 */1 * * *`, which is every hour)
+- `SYNC_INTERVAL`: Two formats supported:
+  - Cron pattern (e.g. `0 */1 * * *`): Runs at specific clock times (default: every hour on the hour)
+  - Number of minutes (e.g. `60`): Runs every X minutes from when the service starts
 - `ABS_URL`: Your Audiobookshelf server URL
 - `ABS_API_KEY`: Your Audiobookshelf API key (found in Settings > Users > [Your User] > API Token)
 - `ABS_USER_ID`: Your Audiobookshelf user ID (found in the URL when viewing your profile)
