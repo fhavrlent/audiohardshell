@@ -8,6 +8,13 @@ import { HardcoverAudiobook } from '../../hardcoverTypes';
 type AudiobookshelfService = ReturnType<typeof createAudiobookshelfService>;
 type HardcoverService = ReturnType<typeof createHardcoverService>;
 
+export enum ProgressSyncResult {
+  UPDATED = 'UPDATED',
+  SKIPPED = 'SKIPPED',
+  NOT_FOUND = 'NOT_FOUND',
+  ERROR = 'ERROR',
+}
+
 export async function syncAudiobookProgress({
   absService,
   hardcoverService,
@@ -18,7 +25,7 @@ export async function syncAudiobookProgress({
   hardcoverService: HardcoverService;
   bookProgress: MediaProgress;
   cache?: SyncCache;
-}): Promise<boolean> {
+}): Promise<ProgressSyncResult> {
   try {
     logger.info(`Syncing progress for book ID: ${bookProgress.libraryItemId}`);
 
@@ -40,12 +47,12 @@ export async function syncAudiobookProgress({
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       logger.error(`Failed to format book data for progress sync: ${errorMessage}`);
-      return false;
+      return ProgressSyncResult.ERROR;
     }
 
     if (!formattedBook) {
       logger.warn(`Formatted book data is undefined for ID: ${bookProgress.libraryItemId}`);
-      return false;
+      return ProgressSyncResult.ERROR;
     }
 
     let currentlyReadingAudiobooks;
@@ -66,23 +73,31 @@ export async function syncAudiobookProgress({
       logger.warn(
         `No matching audiobook in progress found on Hardcover for "${formattedBook.book.title}"`
       );
-      return false;
+      return ProgressSyncResult.NOT_FOUND;
     }
 
     logger.info(
       `Found matching audiobook on Hardcover - "${formattedBook.book.title}" (Edition ID: ${matchingAudiobook.edition_id})`
     );
 
-    return await updateHardcoverProgress(
+    const result = await updateHardcoverProgress(
       hardcoverService,
       matchingAudiobook.edition_id,
       formattedBook.progress.currentTimeSeconds,
       cache?.hardcoverUserId
     );
+
+    if (result === true) {
+      return ProgressSyncResult.UPDATED;
+    } else if (result === 'skipped') {
+      return ProgressSyncResult.SKIPPED;
+    } else {
+      return ProgressSyncResult.ERROR;
+    }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     logger.error(`Error syncing audiobook progress: ${errorMessage}`);
-    return false;
+    return ProgressSyncResult.ERROR;
   }
 }
 
@@ -135,13 +150,30 @@ async function updateHardcoverProgress(
   editionId: number,
   progressSeconds: number,
   userId?: string | null
-): Promise<boolean> {
+): Promise<boolean | 'skipped'> {
   try {
     logger.info(
       `Updating Hardcover progress for edition ID: ${editionId} to ${progressSeconds} seconds`
     );
 
     const roundedProgress = Math.round(progressSeconds);
+
+    const bookReadInfo = await hardcoverService.getBookReadInfo(editionId, userId || undefined);
+
+    if (!bookReadInfo) {
+      logger.error(`Cannot update progress without book read info for edition: ${editionId}`);
+      return false;
+    }
+
+    const currentProgressSeconds =
+      bookReadInfo.progressSeconds !== null ? bookReadInfo.progressSeconds : 0;
+
+    if (currentProgressSeconds === roundedProgress) {
+      logger.info(
+        `Skipping update for edition ID: ${editionId} - progress already at ${roundedProgress} seconds`
+      );
+      return 'skipped';
+    }
 
     const result = await hardcoverService.updateAudiobookProgress(
       editionId,

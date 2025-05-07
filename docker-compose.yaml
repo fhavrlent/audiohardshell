@@ -13,18 +13,8 @@ services:
       - ABS_URL=${ABS_URL}
       - ABS_USER_ID=${ABS_USER_ID}
       - SYNC_INTERVAL=${SYNC_INTERVAL:-0 */1 * * *}
-
-    secrets:
-      - source: abs_api_key
-        target: /run/secrets/abs_api_key
-      - source: hardcover_api_key
-        target: /run/secrets/hardcover_api_key
-
-secrets:
-  abs_api_key:
-    file: ./secrets/abs_api_key.txt
-  hardcover_api_key:
-    file: ./secrets/hardcover_api_key.txt
+      - ABS_API_KEY=${ABS_API_KEY}
+      - HARDCOVER_API_KEY=${HARDCOVER_API_KEY}
 
 volumes:
   logs-data:

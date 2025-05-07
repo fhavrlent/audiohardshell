@@ -59,7 +59,7 @@ A TypeScript application that automatically syncs your audiobook listening progr
    npm run build
    ```
 
-### Docker/Podman Installation with Secrets (Recommended)
+### Docker/Podman Installation
 
 1. Clone this repository:
    ```bash
@@ -67,19 +67,20 @@ A TypeScript application that automatically syncs your audiobook listening progr
    cd audiohardshelf
    ```
 
-2. Set up Docker secrets using the provided script:
+2. Create a `.env` file by copying the example:
    ```bash
-   chmod +x setup-secrets.sh
-   ./setup-secrets.sh
+   cp .env.example .env
    ```
    
-   This script will create a `secrets` directory with files for your API keys and set appropriate permissions.
-
-3. Create a `.env` file for non-sensitive information:
+3. Edit the `.env` file with your own credentials:
    ```
    # Audiobookshelf configuration
    ABS_URL=http://your-audiobookshelf-server:port
+   ABS_API_KEY=your_audiobookshelf_api_key
    ABS_USER_ID=your_audiobookshelf_user_id
+
+   # Hardcover.app configuration
+   HARDCOVER_API_KEY=your_hardcover_api_key
    
    # Sync configuration
    SYNC_INTERVAL="0 */1 * * *"  # Every hour by default
@@ -147,35 +148,26 @@ You can also use the provided systemd service file:
    sudo systemctl status audiohardshelf
    ```
 
-### Running with Docker Compose and Secrets
+### Running with Docker Compose
 
 ```bash
-# Set up secrets first (only needed once)
-./setup-secrets.sh
-
 # Start the application with Docker Compose
 docker-compose up -d
 ```
-
-This method keeps your API keys secure by using Docker secrets instead of environment variables.
 
 ### Running with Podman
 
 Podman is compatible with Docker commands and Docker Compose:
 
 ```bash
-# Set up secrets first (only needed once)
-./setup-secrets.sh
-
 # Start the application with podman-compose
 podman-compose up -d
 ```
 
 ## Configuration
 
-You can adjust the following settings:
+You can adjust the following settings in your `.env` file:
 
-When using standard installation (`.env` file):
 - `SYNC_INTERVAL`: Two formats supported:
   - Cron pattern (e.g. `0 */1 * * *`): Runs at specific clock times (default: every hour on the hour)
   - Number of minutes (e.g. `60`): Runs every X minutes from when the service starts
@@ -183,10 +175,6 @@ When using standard installation (`.env` file):
 - `ABS_API_KEY`: Your Audiobookshelf API key (found in Settings > Users > [Your User] > API Token)
 - `ABS_USER_ID`: Your Audiobookshelf user ID (found in the URL when viewing your profile)
 - `HARDCOVER_API_KEY`: Your Hardcover API key (found in your account settings)
-
-When using Docker with secrets (separate files):
-- Environment variables in `.env`: `ABS_URL`, `ABS_USER_ID`, `SYNC_INTERVAL`
-- Secret files: `./secrets/abs_api_key.txt`, `./secrets/hardcover_api_key.txt`
 
 ## Logs
 

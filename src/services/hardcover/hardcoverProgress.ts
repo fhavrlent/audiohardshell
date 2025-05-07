@@ -11,6 +11,13 @@ interface UpdateProgressInput {
   finishedAt?: string;
 }
 
+export interface BookReadInfo {
+  id: number;
+  progressSeconds: number | null;
+  startedAt?: string | null;
+  finishedAt?: string | null;
+}
+
 export async function updateAudiobookProgress(
   client: HardcoverClient,
   input: UpdateProgressInput
@@ -86,22 +93,22 @@ export async function updateAudiobookProgress(
   }
 }
 
-export async function findUserBookReadId(
+export async function getBookReadInfo(
   client: HardcoverClient,
   editionId: number,
   userId?: string
-): Promise<number | null> {
+): Promise<BookReadInfo | null> {
   try {
-    logger.info(`Finding user_book_read ID for edition ID: ${editionId}`);
+    logger.info(`Fetching book read info for edition ID: ${editionId}`);
 
     const userIdToUse = userId || client.getUserId();
     if (!userIdToUse) {
-      logger.error('No user ID available to find user_book_read ID');
+      logger.error('No user ID available to fetch book read info');
       return null;
     }
 
     const query = `
-      query FindUserBookRead($editionId: Int!, $userId: Int!) {
+      query GetBookReadInfo($editionId: Int!, $userId: Int!) {
         user_book_reads(
           where: {
             edition_id: {_eq: $editionId},
@@ -130,16 +137,33 @@ export async function findUserBookReadId(
       return null;
     }
 
-    const userBookReadId = result.user_book_reads[0].id;
-    logger.info(`Found user_book_read ID: ${userBookReadId} for edition ID: ${editionId}`);
-    return userBookReadId;
+    const bookRead = result.user_book_reads[0];
+    const progressSeconds =
+      bookRead.progress_seconds !== null && bookRead.progress_seconds !== undefined
+        ? bookRead.progress_seconds
+        : 0;
+
+    logger.info(
+      `Found book read info for edition ID: ${editionId} - ID: ${bookRead.id}, Progress: ${progressSeconds} seconds`
+    );
+
+    return {
+      id: bookRead.id,
+      progressSeconds: progressSeconds,
+      startedAt: bookRead.started_at,
+      finishedAt: bookRead.finished_at,
+    };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    logger.error(`Failed to find user_book_read ID: ${errorMessage}`, {
+    logger.error(`Failed to fetch book read info: ${errorMessage}`, {
       editionId,
     });
     return null;
   }
+}
+
+export function getUserBookReadId(bookReadInfo: BookReadInfo | null): number | null {
+  return bookReadInfo ? bookReadInfo.id : null;
 }
 
 export async function updateAudiobookProgressByEditionId(
@@ -170,17 +194,27 @@ export async function updateAudiobookProgressByEditionId(
       logger.debug(`Using provided user ID: ${userIdToUse} for progress update`);
     }
 
-    const userBookReadId = await findUserBookReadId(client, editionId, userIdToUse);
+    const roundedNewProgress = Math.round(progressSeconds);
+    const bookReadInfo = await getBookReadInfo(client, editionId, userIdToUse);
 
-    if (!userBookReadId) {
+    if (!bookReadInfo) {
       logger.error(`Cannot update progress without user_book_read ID for edition: ${editionId}`);
       return false;
     }
 
+    const currentProgressSeconds =
+      bookReadInfo.progressSeconds !== null ? bookReadInfo.progressSeconds : 0;
+    if (currentProgressSeconds === roundedNewProgress) {
+      logger.info(
+        `Skipping update for edition ID: ${editionId} - progress already at ${roundedNewProgress} seconds`
+      );
+      return true;
+    }
+
     return await updateAudiobookProgress(client, {
-      id: userBookReadId,
+      id: bookReadInfo.id,
       editionId,
-      progressSeconds,
+      progressSeconds: roundedNewProgress,
       startedAt: new Date().toISOString().split('T')[0],
     });
   } catch (error) {

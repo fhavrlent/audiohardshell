@@ -2,7 +2,7 @@ import logger from '../logger';
 import { createAudiobookshelfService } from '../audiobookshelf';
 import { createHardcoverService } from '../hardcover';
 import { findBookInHardcover } from './matcher';
-import { syncAudiobookProgress } from './progressSync';
+import { syncAudiobookProgress, ProgressSyncResult } from './progressSync';
 import { MediaProgress } from '../../audiobookshelfTypes';
 import { SyncCache } from '../../types';
 
@@ -10,9 +10,10 @@ type AudiobookshelfService = ReturnType<typeof createAudiobookshelfService>;
 type HardcoverService = ReturnType<typeof createHardcoverService>;
 
 type SyncResults = Readonly<{
-  foundCount: number;
   notFoundCount: number;
   updatedProgressCount: number;
+  skippedProgressCount: number;
+  errorCount: number;
 }>;
 
 export async function syncBooksToHardcover(
@@ -47,7 +48,9 @@ export async function syncBooksToHardcover(
     });
 
     logger.info(
-      `Book sync completed. Found: ${results.foundCount}, Not Found: ${results.notFoundCount}, Progress Updated: ${results.updatedProgressCount}`
+      `Book sync completed. Not Found: ${results.notFoundCount}, ` +
+        `Progress Updated: ${results.updatedProgressCount}, Progress Skipped: ${results.skippedProgressCount}, ` +
+        `Errors: ${results.errorCount}`
     );
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -80,9 +83,10 @@ async function processBooksSync({
   books: MediaProgress[];
   cache: SyncCache;
 }): Promise<SyncResults> {
-  let foundCount = 0;
   let notFoundCount = 0;
   let updatedProgressCount = 0;
+  let skippedProgressCount = 0;
+  let errorCount = 0;
 
   if (!cache.hardcoverUserId) {
     await hardcoverService.validateConnection();
@@ -114,31 +118,41 @@ async function processBooksSync({
       });
 
       if (found) {
-        foundCount++;
-
-        const progressUpdated = await syncAudiobookProgress({
+        const progressResult = await syncAudiobookProgress({
           absService,
           hardcoverService,
           bookProgress,
           cache,
         });
 
-        if (progressUpdated) {
-          updatedProgressCount++;
+        switch (progressResult) {
+          case ProgressSyncResult.UPDATED:
+            updatedProgressCount++;
+            break;
+          case ProgressSyncResult.SKIPPED:
+            skippedProgressCount++;
+            break;
+          case ProgressSyncResult.NOT_FOUND:
+            notFoundCount++;
+            break;
+          case ProgressSyncResult.ERROR:
+            errorCount++;
+            break;
         }
       } else {
         notFoundCount++;
       }
     } catch (error) {
-      notFoundCount++;
+      errorCount++;
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       logger.error(`Error syncing book: ${errorMessage}`);
     }
   }
 
   return {
-    foundCount,
     notFoundCount,
     updatedProgressCount,
+    skippedProgressCount,
+    errorCount,
   };
 }

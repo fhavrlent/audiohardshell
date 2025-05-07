@@ -2,7 +2,12 @@ import { createHardcoverClient } from './hardcover/hardcoverClient';
 import { validateHardcoverConnection } from './hardcover/hardcoverConnection';
 import { searchHardcoverBooks, findBookInHardcover } from './hardcover/hardcoverSearch';
 import { getCurrentlyReadingAudiobooks } from './hardcover/hardcoverUserBooks';
-import { updateAudiobookProgressByEditionId } from './hardcover/hardcoverProgress';
+import {
+  updateAudiobookProgressByEditionId,
+  getBookReadInfo,
+  getUserBookReadId,
+  BookReadInfo,
+} from './hardcover/hardcoverProgress';
 import { HardcoverBook } from '../types';
 import { HardcoverAudiobook } from '../hardcoverTypes';
 
@@ -43,6 +48,14 @@ export function createHardcoverService() {
       userId?: string
     ): Promise<boolean> =>
       updateAudiobookProgressByEditionId(client, editionId, progressSeconds, userId),
+
+    getBookReadInfo: async (editionId: number, userId?: string): Promise<BookReadInfo | null> =>
+      getBookReadInfo(client, editionId, userId),
+
+    getUserBookReadId: async (editionId: number, userId?: string): Promise<number | null> => {
+      const info = await getBookReadInfo(client, editionId, userId);
+      return getUserBookReadId(info);
+    },
   };
 }
 
