@@ -5,11 +5,12 @@ import { getCurrentlyReadingAudiobooks } from './hardcover/hardcoverUserBooks';
 import {
   updateAudiobookProgressByEditionId,
   getBookReadInfo,
-  getUserBookReadId,
   BookReadInfo,
+  updateBookStatus,
 } from './hardcover/hardcoverProgress';
 import { HardcoverBook } from '../types';
 import { HardcoverAudiobook } from '../hardcoverTypes';
+import config from '../config/config';
 
 const clientInstance = createHardcoverClient();
 
@@ -42,20 +43,27 @@ export function createHardcoverService() {
     getCurrentlyReadingAudiobooks: async (userId?: string): Promise<HardcoverAudiobook[]> =>
       getCurrentlyReadingAudiobooks(client, userId),
 
-    updateAudiobookProgress: async (
-      editionId: number,
-      progressSeconds: number,
-      userId?: string
-    ): Promise<boolean> =>
-      updateAudiobookProgressByEditionId(client, editionId, progressSeconds, userId),
+    updateAudiobookProgress: async (params: {
+      editionId: number;
+      progressSeconds: number;
+      userId?: string;
+      bookReadInfo: BookReadInfo;
+    }): Promise<boolean> =>
+      updateAudiobookProgressByEditionId({
+        client,
+        ...params,
+      }),
 
     getBookReadInfo: async (editionId: number, userId?: string): Promise<BookReadInfo | null> =>
-      getBookReadInfo(client, editionId, userId),
+      getBookReadInfo({ client, editionId, userId }),
 
-    getUserBookReadId: async (editionId: number, userId?: string): Promise<number | null> => {
-      const info = await getBookReadInfo(client, editionId, userId);
-      return getUserBookReadId(info);
-    },
+    updateBookStatus: async (
+      userBookId: number,
+      editionId: number,
+      statusId: number
+    ): Promise<boolean> => updateBookStatus({ client, userBookId, editionId, statusId }),
+
+    getFinishedThreshold: (): number => config.hardcover.finishedThreshold,
   };
 }
 

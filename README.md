@@ -7,6 +7,7 @@ A TypeScript application that automatically syncs your audiobook listening progr
 - Syncs currently listening audiobooks from Audiobookshelf to Hardcover.app
 - Matches books between platforms using ISBN, ASIN, or title search
 - Updates progress percentages and timestamps
+- Automatically marks books as "Finished" when they reach a configurable completion threshold
 - Runs on a configurable schedule (default: every hour)
 
 ## Prerequisites
@@ -175,6 +176,7 @@ You can adjust the following settings in your `.env` file:
 - `ABS_API_KEY`: Your Audiobookshelf API key (found in Settings > Users > [Your User] > API Token)
 - `ABS_USER_ID`: Your Audiobookshelf user ID (found in the URL when viewing your profile)
 - `HARDCOVER_API_KEY`: Your Hardcover API key (found in your account settings)
+- `FINISHED_THRESHOLD`: The percentage (0.0-1.0) of listening progress at which a book should be automatically marked as "Finished" in Hardcover (default: 0.985 or 98.5%)
 
 ## Logs
 

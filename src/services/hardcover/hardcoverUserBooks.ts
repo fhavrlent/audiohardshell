@@ -121,12 +121,22 @@ export async function getCurrentlyReadingAudiobooks(
           return null;
         }
 
+        const userBookId = book.book.user_books?.find(ub => ub.edition_id === book.edition_id)?.id;
+
+        if (!userBookId) {
+          logger.warn(
+            `Expected to find user book ID for edition "${book.edition_id}" of book "${book.book.title}" but none found`
+          );
+          return null;
+        }
+
         const otherUserEditionIds = book.book.user_books
           ? book.book.user_books.map(ub => ub.edition_id).filter(eid => eid !== book.edition_id)
           : [];
 
         return {
           edition_id: book.edition_id,
+          user_book_id: userBookId,
           title: matchingEdition.title || book.book.title,
           isbn_10: matchingEdition.isbn_10,
           isbn_13: matchingEdition.isbn_13,

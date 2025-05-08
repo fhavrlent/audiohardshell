@@ -15,6 +15,7 @@ services:
       - SYNC_INTERVAL=${SYNC_INTERVAL:-0 */1 * * *}
       - ABS_API_KEY=${ABS_API_KEY}
       - HARDCOVER_API_KEY=${HARDCOVER_API_KEY}
+      - FINISHED_THRESHOLD=${FINISHED_THRESHOLD}
 
 volumes:
   logs-data:

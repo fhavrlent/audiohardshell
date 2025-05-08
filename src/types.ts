@@ -11,6 +11,7 @@ export interface AppConfig {
   hardcover: {
     apiUrl: string;
     apiKey: string;
+    finishedThreshold: number;
   };
   syncInterval: string;
   logDir: string;

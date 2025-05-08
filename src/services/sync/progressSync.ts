@@ -84,7 +84,8 @@ export async function syncAudiobookProgress({
       hardcoverService,
       matchingAudiobook.edition_id,
       formattedBook.progress.currentTimeSeconds,
-      cache?.hardcoverUserId
+      cache?.hardcoverUserId,
+      currentlyReadingAudiobooks
     );
 
     if (result === true) {
@@ -149,7 +150,8 @@ async function updateHardcoverProgress(
   hardcoverService: HardcoverService,
   editionId: number,
   progressSeconds: number,
-  userId?: string | null
+  userId?: string | null,
+  audiobooks?: HardcoverAudiobook[]
 ): Promise<boolean | 'skipped'> {
   try {
     logger.info(
@@ -175,14 +177,19 @@ async function updateHardcoverProgress(
       return 'skipped';
     }
 
-    const result = await hardcoverService.updateAudiobookProgress(
+    const result = await hardcoverService.updateAudiobookProgress({
       editionId,
-      roundedProgress,
-      userId || undefined
-    );
+      progressSeconds: roundedProgress,
+      userId: userId || undefined,
+      bookReadInfo,
+    });
 
     if (result) {
       logger.info(`Successfully updated progress for edition ID: ${editionId}`);
+
+      if (audiobooks) {
+        await checkAndMarkBookAsFinished(hardcoverService, editionId, progressSeconds, audiobooks);
+      }
     } else {
       logger.warn(`Failed to update progress for edition ID: ${editionId}`);
     }
@@ -192,5 +199,40 @@ async function updateHardcoverProgress(
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     logger.error(`Error updating Hardcover progress: ${errorMessage}`);
     return false;
+  }
+}
+
+export async function checkAndMarkBookAsFinished(
+  hardcoverService: HardcoverService,
+  editionId: number,
+  progressSeconds: number,
+  audiobooks: HardcoverAudiobook[]
+): Promise<void> {
+  const audiobook = audiobooks.find(ab => ab.edition_id === editionId);
+  if (!audiobook || audiobook.audio_seconds <= 0) return;
+
+  const userBookId = audiobook.user_book_id;
+  const progressPercent = progressSeconds / audiobook.audio_seconds;
+  const finishedThreshold = hardcoverService.getFinishedThreshold();
+
+  logger.info(
+    `Audiobook progress: ${(progressPercent * 100).toFixed(2)}%, ` +
+      `Threshold: ${(finishedThreshold * 100).toFixed(2)}%`
+  );
+
+  if (progressPercent >= finishedThreshold) {
+    logger.info(
+      `Book has reached ${(progressPercent * 100).toFixed(2)}% progress, ` +
+        `which exceeds the threshold of ${(finishedThreshold * 100).toFixed(2)}%. ` +
+        `Marking as finished.`
+    );
+
+    const statusUpdateResult = await hardcoverService.updateBookStatus(userBookId, editionId, 3);
+
+    if (statusUpdateResult) {
+      logger.info(`Successfully marked book as finished (Edition ID: ${editionId})`);
+    } else {
+      logger.warn(`Failed to mark book as finished (Edition ID: ${editionId})`);
+    }
   }
 }

@@ -37,7 +37,6 @@ export async function updateAudiobookProgress(
             startedAt: started_at
             finishedAt: finished_at
             editionId: edition_id
-            progress
             progressPages: progress_pages
             progressSeconds: progress_seconds
             __typename
@@ -93,11 +92,15 @@ export async function updateAudiobookProgress(
   }
 }
 
-export async function getBookReadInfo(
-  client: HardcoverClient,
-  editionId: number,
-  userId?: string
-): Promise<BookReadInfo | null> {
+export async function getBookReadInfo({
+  client,
+  editionId,
+  userId,
+}: {
+  client: HardcoverClient;
+  editionId: number;
+  userId?: string;
+}): Promise<BookReadInfo | null> {
   try {
     logger.info(`Fetching book read info for edition ID: ${editionId}`);
 
@@ -162,16 +165,19 @@ export async function getBookReadInfo(
   }
 }
 
-export function getUserBookReadId(bookReadInfo: BookReadInfo | null): number | null {
-  return bookReadInfo ? bookReadInfo.id : null;
-}
-
-export async function updateAudiobookProgressByEditionId(
-  client: HardcoverClient,
-  editionId: number,
-  progressSeconds: number,
-  userId?: string
-): Promise<boolean> {
+export async function updateAudiobookProgressByEditionId({
+  client,
+  editionId,
+  progressSeconds,
+  userId,
+  bookReadInfo,
+}: {
+  client: HardcoverClient;
+  editionId: number;
+  progressSeconds: number;
+  userId?: string;
+  bookReadInfo: BookReadInfo;
+}): Promise<boolean> {
   try {
     let userIdToUse = userId || client.getUserId();
 
@@ -195,12 +201,6 @@ export async function updateAudiobookProgressByEditionId(
     }
 
     const roundedNewProgress = Math.round(progressSeconds);
-    const bookReadInfo = await getBookReadInfo(client, editionId, userIdToUse);
-
-    if (!bookReadInfo) {
-      logger.error(`Cannot update progress without user_book_read ID for edition: ${editionId}`);
-      return false;
-    }
 
     const currentProgressSeconds =
       bookReadInfo.progressSeconds !== null ? bookReadInfo.progressSeconds : 0;
@@ -222,6 +222,83 @@ export async function updateAudiobookProgressByEditionId(
     logger.error(`Failed to update audiobook progress by edition ID: ${errorMessage}`, {
       editionId,
       progressSeconds,
+    });
+    return false;
+  }
+}
+
+export async function updateBookStatus({
+  client,
+  userBookId,
+  editionId,
+  statusId,
+}: {
+  client: HardcoverClient;
+  userBookId: number;
+  editionId: number;
+  statusId: number;
+}): Promise<boolean> {
+  try {
+    logger.info(
+      `Updating book status for user book ID: ${userBookId}, edition ID: ${editionId}, new status: ${statusId}`
+    );
+
+    const mutation = `
+      mutation UpdateUserBook($id: Int!, $object: UserBookUpdateInput!) {
+        updateResponse: update_user_book(id: $id, object: $object) {
+          error
+          userBook: user_book {
+            id
+            bookId: book_id
+            editionId: edition_id
+            userId: user_id
+            statusId: status_id
+            __typename
+          }
+          __typename
+        }
+      }
+    `;
+
+    const variables = {
+      id: userBookId,
+      object: {
+        edition_id: editionId,
+        status_id: statusId,
+      },
+    };
+
+    const result = await client.executeQuery<{
+      updateResponse: {
+        error: string | null;
+        userBook: {
+          id: number;
+          statusId: number;
+        } | null;
+      };
+    }>(mutation, variables);
+
+    if (result.updateResponse.error) {
+      logger.error(`Error updating book status: ${result.updateResponse.error}`);
+      return false;
+    }
+
+    if (!result.updateResponse.userBook) {
+      logger.warn(`Updated book status but received no book data in response`);
+      return true;
+    }
+
+    logger.info(
+      `Successfully updated book status: ID ${result.updateResponse.userBook.id}, ` +
+        `New status: ${result.updateResponse.userBook.statusId}`
+    );
+    return true;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.error(`Failed to update book status: ${errorMessage}`, {
+      userBookId,
+      editionId,
+      statusId,
     });
     return false;
   }
