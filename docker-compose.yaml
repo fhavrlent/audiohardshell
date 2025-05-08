@@ -1,8 +1,6 @@
 services:
   audiohardshelf:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/fhavrlent/audiohardshelf:latest
     container_name: audiohardshelf
     restart: unless-stopped
 

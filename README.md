@@ -16,56 +16,33 @@ A TypeScript application that automatically syncs your audiobook listening progr
 - A self-hosted Audiobookshelf server with API access
 - A Hardcover.app account with API access
 
-## Installation
+## Installation & Usage
 
-### Standard Installation
+### Docker/Podman Installation (Recommended)
 
-1. Clone this repository to your VPS or local machine:
-   ```bash
-   git clone <repository-url> audiohardshelf
-   cd audiohardshelf
-   ```
+The recommended way to run AudioHardShelf is using Docker or Podman, which handles all dependencies and runs in an isolated environment.
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+1. Create or download existing docker-compose.yaml file
+   ```yaml
+   services:
+   audiohardshelf:
+      image: ghcr.io/fhavrlent/audiohardshelf:latest
+      container_name: audiohardshelf
+      restart: unless-stopped
 
-3. Create a `.env` file by copying the example:
-   ```bash
-   cp .env.example .env
-   ```
+      volumes:
+         - logs-data:/app/logs:Z
 
-4. Edit the `.env` file with your own credentials:
-   ```
-   # Audiobookshelf configuration
-   ABS_URL=http://your-audiobookshelf-server:port
-   ABS_API_KEY=your_audiobookshelf_api_key
-   ABS_USER_ID=your_audiobookshelf_user_id
+      environment:
+         - ABS_URL=${ABS_URL}
+         - ABS_USER_ID=${ABS_USER_ID}
+         - SYNC_INTERVAL=${SYNC_INTERVAL:-0 */1 * * *}
+         - ABS_API_KEY=${ABS_API_KEY}
+         - HARDCOVER_API_KEY=${HARDCOVER_API_KEY}
 
-   # Hardcover.app configuration
-   # The URL is hardcoded in the config since Hardcover.app is not self-hosted
-   HARDCOVER_API_KEY=your_hardcover_api_key
-   # Note: You can include "Bearer " prefix in your API key or leave it out - the app will handle either format
+   volumes:
+   logs-data:
 
-   # Sync configuration
-   # Option 1: Cron pattern - syncs at specific clock times
-   SYNC_INTERVAL="0 */1 * * *"  # Every hour, at minute 0
-   # Option 2: Minutes interval - syncs every X minutes from service startup
-   # SYNC_INTERVAL="60"  # Every 60 minutes after startup
-   ```
-
-5. Build the application:
-   ```bash
-   npm run build
-   ```
-
-### Docker/Podman Installation
-
-1. Clone this repository:
-   ```bash
-   git clone <repository-url> audiohardshelf
-   cd audiohardshelf
    ```
 
 2. Create a `.env` file by copying the example:
@@ -92,78 +69,66 @@ A TypeScript application that automatically syncs your audiobook listening progr
    docker-compose up -d
    ```
 
-## Usage
+   or with Podman Compose:
+   ```bash
+   podman-compose up -d
+   ```
 
-### One-time Sync
+### PM2 Installation (Alternative)
 
-To run a one-time sync:
+If you prefer not to use containers, you can run AudioHardShelf using PM2, a process manager for Node.js applications:
 
-```bash
-npm run sync
-```
+1. Clone this repository to your VPS or local machine:
+   ```bash
+   git clone <repository-url> audiohardshelf
+   cd audiohardshelf
+   ```
 
-### Running as a Service
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-To start the application which will run on schedule:
+3. Create a `.env` file by copying the example:
+   ```bash
+   cp .env.example .env
+   ```
 
-```bash
-npm start
-```
+4. Edit the `.env` file with your own credentials:
+   ```
+   # Audiobookshelf configuration
+   ABS_URL=http://your-audiobookshelf-server:port
+   ABS_API_KEY=your_audiobookshelf_api_key
+   ABS_USER_ID=your_audiobookshelf_user_id
 
-### Running on Your VPS
+   # Hardcover.app configuration
+   HARDCOVER_API_KEY=your_hardcover_api_key
+   
+   # Sync configuration
+   SYNC_INTERVAL="0 */1 * * *"  # Every hour by default
+   ```
 
-For persistent running on a VPS, you can use a process manager like PM2:
+5. Build the application:
+   ```bash
+   npm run build
+   ```
 
-1. Install PM2 (if not already installed):
+6. Install PM2 (if not already installed):
    ```bash
    npm install -g pm2
    ```
 
-2. Start your application with PM2:
+7. Start your application with PM2:
    ```bash
    pm2 start dist/index.js --name audiohardshelf
    ```
 
-3. Make it restart automatically on server reboot:
+8. Make it restart automatically on server reboot:
    ```bash
    pm2 startup
    pm2 save
    ```
 
-#### Alternatively, use systemd
-
-You can also use the provided systemd service file:
-
-1. Edit the `audiohardshelf.service` file with your specific user and paths
-2. Copy the service file to the systemd directory:
-   ```bash
-   sudo cp audiohardshelf.service /etc/systemd/system/
-   ```
-3. Enable and start the service:
-   ```bash
-   sudo systemctl enable audiohardshelf
-   sudo systemctl start audiohardshelf
-   ```
-4. Check the status:
-   ```bash
-   sudo systemctl status audiohardshelf
-   ```
-
-### Running with Docker Compose
-
-```bash
-# Start the application with Docker Compose
-docker-compose up -d
-```
-
-### Running with Podman
-
-Podman is compatible with Docker commands and Docker Compose:
-
-```bash
-# Start the application with podman-compose
-podman-compose up -d
-```
 
 ## Configuration
 
