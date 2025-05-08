@@ -7,6 +7,14 @@ import {
   PodcastMetadataExpanded,
 } from '../../audiobookshelfTypes';
 
+function formatTimestampToDate(timestamp: number): string {
+  const date = new Date(Number(timestamp));
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export async function formatAudiobookForHardcover(
   client: AudiobookshelfClient,
   mediaProgress: MediaProgress
@@ -45,6 +53,10 @@ export async function formatAudiobookForHardcover(
           0,
         lastUpdate: mediaProgress.lastUpdate.toString() || new Date().toISOString(),
         isFinished: mediaProgress.isFinished || false,
+        startedAt: formatTimestampToDate(mediaProgress.startedAt),
+        finishedAt: mediaProgress.finishedAt
+          ? formatTimestampToDate(mediaProgress.finishedAt)
+          : undefined,
       },
     };
   } catch (error) {

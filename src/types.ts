@@ -11,7 +11,6 @@ export interface AppConfig {
   hardcover: {
     apiUrl: string;
     apiKey: string;
-    finishedThreshold: number;
   };
   syncInterval: string;
   logDir: string;
@@ -30,6 +29,8 @@ export interface FormattedBook {
     durationSeconds: number;
     lastUpdate: string | Date;
     isFinished: boolean;
+    startedAt?: string;
+    finishedAt?: string;
   };
 }
 

@@ -33,6 +33,7 @@ export async function syncAudiobookProgress({
     try {
       if (cache?.audiobookDetails?.has(bookProgress.libraryItemId)) {
         const cachedData = cache.audiobookDetails.get(bookProgress.libraryItemId);
+
         formattedBook = cachedData?.formattedBook;
         logger.debug(`Using cached book data for progress sync: ${bookProgress.libraryItemId}`);
       } else {
@@ -80,13 +81,13 @@ export async function syncAudiobookProgress({
       `Found matching audiobook on Hardcover - "${formattedBook.book.title}" (Edition ID: ${matchingAudiobook.edition_id})`
     );
 
-    const result = await updateHardcoverProgress(
+    const result = await updateHardcoverProgress({
       hardcoverService,
-      matchingAudiobook.edition_id,
-      formattedBook.progress.currentTimeSeconds,
-      cache?.hardcoverUserId,
-      currentlyReadingAudiobooks
-    );
+      editionId: matchingAudiobook.edition_id,
+      userId: cache?.hardcoverUserId,
+      audiobooks: currentlyReadingAudiobooks,
+      formattedBook,
+    });
 
     if (result === true) {
       return ProgressSyncResult.UPDATED;
@@ -146,19 +147,27 @@ function findMatchingAudiobook(
   return null;
 }
 
-async function updateHardcoverProgress(
-  hardcoverService: HardcoverService,
-  editionId: number,
-  progressSeconds: number,
-  userId?: string | null,
-  audiobooks?: HardcoverAudiobook[]
-): Promise<boolean | 'skipped'> {
+async function updateHardcoverProgress({
+  hardcoverService,
+  editionId,
+  userId,
+  audiobooks,
+  formattedBook,
+}: {
+  hardcoverService: HardcoverService;
+  editionId: number;
+  userId?: string | null;
+  audiobooks?: HardcoverAudiobook[];
+  formattedBook: FormattedBook;
+}): Promise<boolean | 'skipped'> {
+  const { isFinished, currentTimeSeconds } = formattedBook.progress;
+
   try {
     logger.info(
-      `Updating Hardcover progress for edition ID: ${editionId} to ${progressSeconds} seconds`
+      `Updating Hardcover progress for edition ID: ${editionId} to ${currentTimeSeconds} seconds`
     );
 
-    const roundedProgress = Math.round(progressSeconds);
+    const roundedProgress = Math.round(currentTimeSeconds);
 
     const bookReadInfo = await hardcoverService.getBookReadInfo(editionId, userId || undefined);
 
@@ -181,14 +190,15 @@ async function updateHardcoverProgress(
       editionId,
       progressSeconds: roundedProgress,
       userId: userId || undefined,
+      formattedBook,
       bookReadInfo,
     });
 
     if (result) {
       logger.info(`Successfully updated progress for edition ID: ${editionId}`);
 
-      if (audiobooks) {
-        await checkAndMarkBookAsFinished(hardcoverService, editionId, progressSeconds, audiobooks);
+      if (audiobooks && isFinished) {
+        await markBookAsFinished(hardcoverService, editionId, audiobooks);
       }
     } else {
       logger.warn(`Failed to update progress for edition ID: ${editionId}`);
@@ -202,37 +212,23 @@ async function updateHardcoverProgress(
   }
 }
 
-export async function checkAndMarkBookAsFinished(
+async function markBookAsFinished(
   hardcoverService: HardcoverService,
   editionId: number,
-  progressSeconds: number,
   audiobooks: HardcoverAudiobook[]
 ): Promise<void> {
   const audiobook = audiobooks.find(ab => ab.edition_id === editionId);
-  if (!audiobook || audiobook.audio_seconds <= 0) return;
+  if (!audiobook) return;
 
   const userBookId = audiobook.user_book_id;
-  const progressPercent = progressSeconds / audiobook.audio_seconds;
-  const finishedThreshold = hardcoverService.getFinishedThreshold();
 
-  logger.info(
-    `Audiobook progress: ${(progressPercent * 100).toFixed(2)}%, ` +
-      `Threshold: ${(finishedThreshold * 100).toFixed(2)}%`
-  );
+  logger.info(`Book is marked as finished in AudiobookShelf. Marking as finished in Hardcover.`);
 
-  if (progressPercent >= finishedThreshold) {
-    logger.info(
-      `Book has reached ${(progressPercent * 100).toFixed(2)}% progress, ` +
-        `which exceeds the threshold of ${(finishedThreshold * 100).toFixed(2)}%. ` +
-        `Marking as finished.`
-    );
+  const statusUpdateResult = await hardcoverService.updateBookStatus(userBookId, editionId, 3);
 
-    const statusUpdateResult = await hardcoverService.updateBookStatus(userBookId, editionId, 3);
-
-    if (statusUpdateResult) {
-      logger.info(`Successfully marked book as finished (Edition ID: ${editionId})`);
-    } else {
-      logger.warn(`Failed to mark book as finished (Edition ID: ${editionId})`);
-    }
+  if (statusUpdateResult) {
+    logger.info(`Successfully marked book as finished (Edition ID: ${editionId})`);
+  } else {
+    logger.warn(`Failed to mark book as finished (Edition ID: ${editionId})`);
   }
 }

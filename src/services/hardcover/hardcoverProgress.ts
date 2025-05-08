@@ -1,7 +1,7 @@
 import { validateHardcoverConnection } from './hardcoverConnection';
 import logger from '../logger';
 import { User_Book_Reads } from '../../generated/graphql';
-import { HardcoverClient } from '../../types';
+import { FormattedBook, HardcoverClient } from '../../types';
 
 interface UpdateProgressInput {
   id: number;
@@ -49,8 +49,8 @@ export async function updateAudiobookProgress(
     const variables = {
       id: input.id,
       object: {
-        started_at: input.startedAt || new Date().toISOString().split('T')[0],
-        finished_at: input.finishedAt || null,
+        started_at: input.startedAt,
+        finished_at: input.finishedAt,
         edition_id: input.editionId,
         progress_pages: 0,
         progress_seconds: input.progressSeconds,
@@ -171,12 +171,14 @@ export async function updateAudiobookProgressByEditionId({
   progressSeconds,
   userId,
   bookReadInfo,
+  formattedBook,
 }: {
   client: HardcoverClient;
   editionId: number;
   progressSeconds: number;
   userId?: string;
   bookReadInfo: BookReadInfo;
+  formattedBook: FormattedBook;
 }): Promise<boolean> {
   try {
     let userIdToUse = userId || client.getUserId();
@@ -215,7 +217,8 @@ export async function updateAudiobookProgressByEditionId({
       id: bookReadInfo.id,
       editionId,
       progressSeconds: roundedNewProgress,
-      startedAt: new Date().toISOString().split('T')[0],
+      startedAt: formattedBook.progress.startedAt ?? undefined,
+      finishedAt: formattedBook.progress.finishedAt ?? undefined,
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';

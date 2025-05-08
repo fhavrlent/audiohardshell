@@ -92,7 +92,6 @@ export async function findBookInHardcover({
 
     logger.info(`Syncing book "${formattedBook.book.title}" with Hardcover`);
 
-    // Check if we can find the book in the cached Hardcover audiobooks first
     if (cache?.hardcoverAudiobooks?.length) {
       const cachedMatch = findBookInHardcoverCache(formattedBook, cache.hardcoverAudiobooks);
 
@@ -108,7 +107,6 @@ export async function findBookInHardcover({
       );
     }
 
-    // Fall back to the regular API search
     try {
       const hardcoverBook = await hardcoverService.findBook(formattedBook.book);
 

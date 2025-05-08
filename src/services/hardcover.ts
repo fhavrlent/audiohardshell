@@ -8,9 +8,8 @@ import {
   BookReadInfo,
   updateBookStatus,
 } from './hardcover/hardcoverProgress';
-import { HardcoverBook } from '../types';
+import { FormattedBook, HardcoverBook } from '../types';
 import { HardcoverAudiobook } from '../hardcoverTypes';
-import config from '../config/config';
 
 const clientInstance = createHardcoverClient();
 
@@ -48,6 +47,7 @@ export function createHardcoverService() {
       progressSeconds: number;
       userId?: string;
       bookReadInfo: BookReadInfo;
+      formattedBook: FormattedBook;
     }): Promise<boolean> =>
       updateAudiobookProgressByEditionId({
         client,
@@ -62,8 +62,6 @@ export function createHardcoverService() {
       editionId: number,
       statusId: number
     ): Promise<boolean> => updateBookStatus({ client, userBookId, editionId, statusId }),
-
-    getFinishedThreshold: (): number => config.hardcover.finishedThreshold,
   };
 }
 

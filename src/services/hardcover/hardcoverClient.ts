@@ -54,7 +54,7 @@ export function createHardcoverClient() {
         if (variables) {
           payload.variables = variables;
         }
-
+        console.log(JSON.stringify(payload, null, 2));
         const response = await getClient().post<HardcoverGraphQLResponse<T>>('', payload);
 
         if (response.data.errors?.length) {
