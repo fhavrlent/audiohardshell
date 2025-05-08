@@ -25,23 +25,23 @@ The recommended way to run AudioHardShelf is using Docker or Podman, which handl
 1. Create or download existing docker-compose.yaml file
    ```yaml
    services:
-   audiohardshelf:
-      image: ghcr.io/fhavrlent/audiohardshelf:latest
-      container_name: audiohardshelf
-      restart: unless-stopped
+      audiohardshelf:
+         image: ghcr.io/fhavrlent/audiohardshelf:latest
+         container_name: audiohardshelf
+         restart: unless-stopped
 
-      volumes:
-         - logs-data:/app/logs:Z
+         volumes:
+            - logs-data:/app/logs:Z
 
-      environment:
-         - ABS_URL=${ABS_URL}
-         - ABS_USER_ID=${ABS_USER_ID}
-         - SYNC_INTERVAL=${SYNC_INTERVAL:-0 */1 * * *}
-         - ABS_API_KEY=${ABS_API_KEY}
-         - HARDCOVER_API_KEY=${HARDCOVER_API_KEY}
+         environment:
+            - ABS_URL=${ABS_URL}
+            - ABS_USER_ID=${ABS_USER_ID}
+            - SYNC_INTERVAL=${SYNC_INTERVAL:-0 */1 * * *}
+            - ABS_API_KEY=${ABS_API_KEY}
+            - HARDCOVER_API_KEY=${HARDCOVER_API_KEY}
 
    volumes:
-   logs-data:
+      logs-data:
 
    ```
 
